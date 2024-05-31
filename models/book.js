@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+const mongoose = require('mongoose'); // importation de mongoose pour gérer les modèles mongoDB
 
 const bookSchema = mongoose.Schema({
     userId: { type: String, required: true },
