@@ -1,5 +1,6 @@
 const express = require('express');
-const bookRoutes = require('./routes/stuff'); //importation des routes pour les livres 
+const path = require('path');
+const bookRoutes = require('./routes/book'); //importation des routes pour les livres 
 const userRoutes = require('./routes/user'); 
 const mongoose = require('mongoose');
  // connexion à mongoDB 
@@ -20,6 +21,8 @@ app.use((req, res, next) => {
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
     next();
 });
+
+app.use('/images', express.static(path.join(__dirname, 'images')));
 // pas de préfixe auth 
 app.use('/api/books', bookRoutes);
 // routes pour les utilisateurs avec le préfixe auth 
