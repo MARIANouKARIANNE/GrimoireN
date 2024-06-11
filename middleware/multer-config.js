@@ -1,20 +1,43 @@
-const multer = require('multer'); // Middleware qui gére les fichiers form data ( va nous servir pour des uppload ) 
+const multer = require('multer'); // gestion des fichier multipart
+const path = require('path');
+const sharp = require('sharp');
+const fs = require('fs'); // gestion fichier système 
 
-const MIME_TYPES = {
-  'image/jpg': 'jpg',
-  'image/jpeg': 'jpg',
-  'image/png': 'png'
-}; // formats acceptés
+const storage = multer.memoryStorage();
 
-const storage = multer.diskStorage({
-  destination: (req, file, callback) => {
-    callback(null, 'images');
-  },
-  filename: (req, file, callback) => {
-    const name = file.originalname.split(' ').join('_');// les espaces deviennent des tirets du bas 
-    const extension = MIME_TYPES[file.mimetype];
-    callback(null, name + Date.now() + '.' + extension); // nom finale 
+const upload = multer({
+  storage: storage,
+  fileFilter: (req, file, callback) => {
+    // vérification des fichiers autorisés 
+    if (!file.originalname.match(/\.(jpg|jpeg|png)$/)) {
+      return callback(new Error('Seuls les fichiers JPEG, JPG et PNG sont autorisés.'));
+    }
+    callback(null, true);
   }
 });
+// Middleware pour le traitement des images 
+const imageProcessingMiddleware = async (req, res, next) => {
+  if (!req.file) {
+    return next();
+  }
 
-module.exports = multer({storage: storage}).single('image');
+  try {
+    // génération d'un nom pour le fichier ( le livre ) unique 
+    const filename = Date.now() + '-' + req.file.originalname;
+    const processedImagePath = path.join('images', filename);
+// réduction de la taille avec sharp 
+    await sharp(req.file.buffer)
+      .resize({ width: 800 })
+      .jpeg({ quality: 80 })
+      .toFile(processedImagePath);
+
+    req.file.filename = filename;
+    req.file.path = processedImagePath;
+    
+    next();
+  } catch (error) {
+    next(error);
+  }
+};
+// export de multer et du traitement pour la réduction d'image 
+module.exports = { upload, imageProcessingMiddleware };
